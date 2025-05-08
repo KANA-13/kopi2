@@ -3,55 +3,58 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Judul dan deskripsi
-st.title('☕ Simulasi Pemanggangan Biji Kopi Berbasis Web')
-st.write("""
-Selamat datang!  
-Di sini Anda bisa mensimulasikan proses pemanggangan biji kopi, melihat perubahan suhu dan warna secara interaktif!
-""")
+st.set_page_config(page_title="Coffee Roasting Simulator", layout="wide")
 
-# Input dari user
-durasi = st.slider('Durasi Pemanggangan (menit)', 1, 10, 5)
-start = st.button('Mulai Pemanggangan')
+# Header
+st.title("☕ Coffee Roasting Simulator")
+st.image("assets/coffee.png", width=150)
 
-# Fungsi untuk simulasi warna biji kopi
-def warna_biji(suhu):
-    if suhu < 150:
-        return 'Coklat Muda'
-    elif suhu < 200:
-        return 'Coklat Medium'
-    else:
-        return 'Coklat Tua'
+# Sidebar: Input
+st.sidebar.header("Roasting Controls")
+bean_type = st.sidebar.selectbox("Select Coffee Bean Type", ["Arabica", "Robusta", "Liberica"])
+temp = st.sidebar.slider("Roasting Temperature (°C)", min_value=150, max_value=250, value=200, step=5)
+simulate_btn = st.sidebar.button("Start Roasting Simulation")
 
-# Simulasi ketika tombol ditekan
-if start:
-    st.subheader('📈 Perkembangan Suhu dan Warna Biji Kopi')
-    suhu_list = []
-    waktu_list = []
-    
+# Main Area
+st.subheader(f"Roasting Profile for {bean_type} Beans at {temp}°C")
+
+# Event-driven simulation
+if simulate_btn:
+    st.success("Simulation Started...")
+    roasting_phases = ["Drying", "Browning", "Development"]
+    phase_times = [0.4, 0.35, 0.25]  # normalized duration
+
+    total_time = 60  # seconds
+    phase_durations = [int(p * total_time) for p in phase_times]
+    time_values = []
+    temp_values = []
+
     progress_bar = st.progress(0)
-    
-    for menit in range(durasi):
-        suhu = 100 + 15 * menit  # suhu bertambah 15 derajat tiap menit
-        warna = warna_biji(suhu)
-        
-        st.write(f"Menit ke-{menit+1}: Suhu **{suhu}°C**, Warna Biji: **{warna}**")
-        
-        suhu_list.append(suhu)
-        waktu_list.append(menit+1)
-        
-        progress_bar.progress((menit+1) / durasi)
-        time.sleep(1)  # waktu jeda untuk efek real-time
-        
-    st.success('Pemanggangan Selesai! ☕')
+    chart_area = st.empty()
+    phase_display = st.empty()
 
-    # Membuat grafik suhu
-    fig, ax = plt.subplots()
-    ax.plot(waktu_list, suhu_list, marker='o', color='chocolate')
-    ax.set_title('Perubahan Suhu Selama Pemanggangan')
-    ax.set_xlabel('Waktu (menit)')
-    ax.set_ylabel('Suhu (°C)')
-    ax.grid(True)
-    st.pyplot(fig)
-    
-    st.balloons()
+    for phase, duration in zip(roasting_phases, phase_durations):
+        phase_display.markdown(f"### 🔥 Current Phase: {phase}")
+        for t in range(duration):
+            elapsed = sum(phase_durations[:roasting_phases.index(phase)]) + t
+            temp_point = temp + np.random.normal(0, 1)  # simulate variation
+            time_values.append(elapsed)
+            temp_values.append(temp_point)
+
+            # Plotting real-time
+            fig, ax = plt.subplots()
+            ax.plot(time_values, temp_values, color="brown")
+            ax.set_xlabel("Time (s)")
+            ax.set_ylabel("Temperature (°C)")
+            ax.set_title("Roasting Curve")
+            chart_area.pyplot(fig)
+
+            progress = int((elapsed / total_time) * 100)
+            progress_bar.progress(min(progress, 100))
+            time.sleep(0.1)
+
+    phase_display.markdown("### ✅ Roasting Complete! Enjoy your coffee ☕")
+
+else:
+    st.info("Adjust the controls on the sidebar and click 'Start Roasting Simulation' to begin.")
+
